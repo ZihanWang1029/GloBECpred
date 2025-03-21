@@ -31,4 +31,4 @@ Arguments:
 -   `-o`: Path to the output result directory.
 
 # Reference
-Zihan, W. et al. (2025+), "GloBECpred: Incorporating Global and Local Information for B-cell Epitope Curve Prediction", working paper
+Zihan, W. et al. (2025+), "GloBECpred: Incorporating Global and Local Information for B-cell Epitope Curve Prediction", working paper.
