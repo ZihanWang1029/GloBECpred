@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-class CNNModel(nn.Module):
+class CNN(nn.Module):
     def __init__(self, output_dim=10):
-        super(CNNModel, self).__init__()
+        super(CNN, self).__init__()
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=32, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm1d(32)
         self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)
