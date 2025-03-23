@@ -16,7 +16,7 @@ conda activate GloBECpred
 3.  Install required dependencies
 ```
 conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-pip install pandas numpy Bio
+pip install numpy Bio
 ```
 
 #  Usage
