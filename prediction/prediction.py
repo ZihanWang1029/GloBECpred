@@ -7,14 +7,14 @@ from Bio.Align import PairwiseAligner, substitution_matrices
 from models.CNN import CNN
 from models.GloBCEpred import GloBCEpred
 
-# 定义氨基酸编码字典
+# Define the amino acid encoding dictionary
 amino_acid_encoding = {
     "A": 0, "C": 1, "D": 2, "E": 3, "F": 4, "G": 5, "H": 6, "I": 7,
     "K": 8, "L": 9, "M": 10, "N": 11, "P": 12, "Q": 13, "R": 14, "S": 15,
     "T": 16, "V": 17, "W": 18, "Y": 19, "X": 20
 }
 
-# one-hot编码
+# One-hot encoding
 def one_hot_encode(sequence, encoding_dict):
     encoding = np.zeros((len(sequence), len(encoding_dict)))
     for i, amino_acid in enumerate(sequence):
@@ -24,7 +24,7 @@ def one_hot_encode(sequence, encoding_dict):
             encoding[i, encoding_dict["X"]] = 1
     return encoding
 
-# 位置编码
+# Positional encoding
 class PositionalEncoding:
     def __init__(self, d_model):
         self.d_model = d_model
@@ -36,7 +36,7 @@ class PositionalEncoding:
         encoding[1::2] = torch.cos(position * div_term)
         return encoding
 
-# 加载set2序列
+# Load set2 sequences
 def load_set2_sequences(set2_path):
     target_ids = {
     "A0A044SS43", "A0A044U9P0", "A0A044UK00", "A0A044UVG8", "A0A059VFK8", "A0A060N479",
@@ -67,7 +67,7 @@ def load_set2_sequences(set2_path):
             sequences.append(str(record.seq))
     return sequences
 
-# 计算得分
+# Calculate scores
 def calculate_scores(query_sequence, all_sequences):
     aligner = PairwiseAligner()
     aligner.mode = 'global'
@@ -84,7 +84,7 @@ def calculate_scores(query_sequence, all_sequences):
 
     return scores.cpu().numpy()
 
-# 滑动窗口生成数据
+# Generate data by sliding window
 def generate_windowed_data(sequence, window_size, coordinates_data):
     X = []
     pe = PositionalEncoding(10)
@@ -113,55 +113,55 @@ def generate_windowed_data(sequence, window_size, coordinates_data):
 
     return np.array(X)
 
-# 主函数
+# Main function
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input', required=True, help='Input FASTA file')
     parser.add_argument('-o', '--output', required=True, help='Output directory')
     args = parser.parse_args()
 
-    # 创建输出目录
+    # Create the output directory
     os.makedirs(args.output, exist_ok=True)
 
-    # 加载set2序列
+    # Load set2 sequences
     set2_sequences = load_set2_sequences('../data/train_data/train.fasta')
 
-    # 加载模型
+    # Initialize the device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 加载CNN模型
+    # Load CNN model
     cnn = CNN().to(device)
     cnn.load_state_dict(torch.load('../models/cnn.pth', map_location=device))
     cnn.eval()
 
-    # 加载GloBCEpred模型
+    # Load GloBCEpred model
     gbepred = GloBCEpred().to(device)
     gbepred.load_state_dict(torch.load('../models/parameter.pth', map_location=device))
     gbepred.eval()
 
-    # 处理输入序列
+    # Process input sequences
     for record in SeqIO.parse(args.input, "fasta"):
         seq_id = record.id
         sequence = str(record.seq)
 
-        # 计算比对得分
+        # calculate scores
         scores = calculate_scores(sequence, set2_sequences)
 
-        # 通过CNN获取coordinates
+        # Extract coordinates using the CNN model
         with torch.no_grad():
             scores_tensor = torch.tensor(scores).float().to(device)
             coordinates = cnn(scores_tensor.unsqueeze(0)).cpu().numpy()
 
-        # 生成窗口数据
+        # Generate data with sliding windows
         window_size = 11
         X = generate_windowed_data(sequence, window_size, coordinates)
         X_tensor = torch.tensor(X).float().to(device)
 
-        # 进行预测
+        # Perform prediction
         with torch.no_grad():
             predictions = gbepred(X_tensor).cpu().numpy().flatten()
 
-        # 保存结果
+        # Save results
         output_path = os.path.join(args.output, f"{seq_id}.csv")
         positions = np.arange(1, len(sequence) + 1)
         np.savetxt(output_path,
